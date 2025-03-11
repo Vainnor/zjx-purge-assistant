@@ -1,6 +1,7 @@
 import argparse
 from zjx_utils import get_inactive_controllers
 from send_notices import send_all_inactivity_notices
+from roster_actions import process_roster_removals
 
 def display_inactive_controllers(inactive, obs, total):
     """Pretty print the results"""
@@ -25,22 +26,42 @@ def display_inactive_controllers(inactive, obs, total):
     print(f"Total inactive controllers: {len(inactive)}")
     print(f"Total OBS controllers excluded: {len(obs)}")
 
+def process_full_removal(inactive, obs, total):
+    """Process both notifications and roster removals"""
+    print("\n=== STARTING EMAIL NOTIFICATIONS ===")
+    if not send_all_inactivity_notices(inactive, obs, total):
+        print("Failed to send all notifications. Aborting roster removal.")
+        return False
+    
+    print("\n=== STARTING ROSTER REMOVALS ===")
+    return process_roster_removals(inactive)
+
 def main():
     parser = argparse.ArgumentParser(description='ZJX Controller Activity Management')
-    parser.add_argument('action', choices=['check', 'send-notices'],
-                      help='Action to perform (check: just display inactive controllers, send-notices: send email notices)')
+    parser.add_argument('action', choices=['check', 'send-notices', 'remove'],
+                      help='Action to perform (check: just display inactive controllers, '
+                           'send-notices: send email notices, '
+                           'remove: send notices AND remove from roster)')
     
     args = parser.parse_args()
     
     try:
+        # Get the data once
+        inactive, obs, total = get_inactive_controllers()
+        
         if args.action == 'check':
-            # Just check and display inactive controllers
-            inactive, obs, total = get_inactive_controllers()
+            # Just display the results
             display_inactive_controllers(inactive, obs, total)
             
         elif args.action == 'send-notices':
-            # Send notices to inactive controllers
-            send_all_inactivity_notices()
+            # Display results and send notices
+            display_inactive_controllers(inactive, obs, total)
+            send_all_inactivity_notices(inactive, obs, total)
+            
+        elif args.action == 'remove':
+            # Display results, send notices, and remove from roster
+            display_inactive_controllers(inactive, obs, total)
+            process_full_removal(inactive, obs, total)
             
     except Exception as e:
         print(f"Error: {e}")

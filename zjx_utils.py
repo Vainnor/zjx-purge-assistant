@@ -94,7 +94,7 @@ def process_batch(controllers, watched_positions, batch_size=10):
                 cid = controller['cid']
                 first_name = controller['fname']
                 last_name = controller['lname']
-                
+                membership = controller['membership']
                 stats_response = get_with_retry(stats_url.format(cid))
                 
                 if stats_response and stats_response.status_code == 200:
@@ -129,17 +129,18 @@ def process_batch(controllers, watched_positions, batch_size=10):
                             'email': controller['email'],
                             'hours': round(total_hours, 2),
                             'rating': controller['rating_short'],
-                            'positions': sorted(list(positions_worked))
+                            'positions': sorted(list(positions_worked)),
+                            'membership': membership
                         })
                     
                     processed_count += 1
-                    print(f"Processed {processed_count}/{total_controllers}: {first_name} {last_name} (CID: {cid}) - {round(total_hours, 2)} ZJX hours")
+                    print(f"Processed {processed_count}/{total_controllers}: {first_name} {last_name} (CID: {cid}) Membership: {membership} - {round(total_hours, 2)} ZJX hours")
                 
                 else:
-                    print(f"Error fetching data for {first_name} {last_name} (CID: {cid}) - Status code: {stats_response.status_code if stats_response else 'No response'}")
+                    print(f"Error fetching data for {first_name} {last_name} (CID: {cid}) Membership: {membership} - Status code: {stats_response.status_code if stats_response else 'No response'}")
                     
             except Exception as e:
-                print(f"Error processing controller {first_name} {last_name} (CID: {cid}): {str(e)}")
+                print(f"Error processing controller {first_name} {last_name} (CID: {cid}) Membership: {membership}: {str(e)}")
                 continue
         
         # Add a longer pause between batches
